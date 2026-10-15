@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>BIM Returns Dashboard</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #334155;
+    --accent: #38bdf8;
+    --accent2: #22c55e;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  h1 {
+    margin: 0 0 4px;
+    font-size: 34px;
+    font-weight: 700;
+  }
+  .subtitle {
+    color: var(--muted);
+    margin-bottom: 24px;
+    font-size: 18px;
+  }
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .kpi .label {
+    color: var(--muted);
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .kpi .value {
+    font-size: 42px;
+    font-weight: 700;
+  }
+  .kpi.total .value { color: var(--accent); }
+  .kpi.defective .value { color: var(--danger); }
+  .kpi.wrong .value { color: var(--warn); }
+  .kpi.changed .value { color: var(--accent2); }
+
+  .filters {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: end;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .filter-group label {
+    font-size: 20px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  select, button {
+    background: var(--card2);
+    color: var(--text);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 22px;
+    min-width: 140px;
+    cursor: pointer;
+  }
+  select:focus, button:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  button.reset {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 8px 16px;
+  }
+  button.reset:hover {
+    background: var(--accent);
+    color: var(--bg);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  thead {
+    background: var(--card2);
+  }
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  th {
+    font-weight: 600;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover {
+    color: var(--accent);
+  }
+  th .arrow {
+    margin-left: 4px;
+    opacity: 0.4;
+    font-size: 10px;
+  }
+  th.sorted .arrow { opacity: 1; color: var(--accent); }
+  tbody tr:hover {
+    background: rgba(56, 189, 248, 0.05);
+  }
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 18px;
+    font-weight: 600;
+  }
+  .badge.defective { background: rgba(239,68,68,0.15); color: #fca5a5; }
+  .badge.wrong_item { background: rgba(245,158,11,0.15); color: #fcd34d; }
+  .badge.changed_mind { background: rgba(34,197,94,0.15); color: #86efac; }
+
+  .count-cell {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .footer {
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent2);
+    margin-right: 6px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .error {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    color: #fca5a5;
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <h1>📊 BIM Returns Dashboard</h1>
+  <div class="subtitle">Suivi des retours clients — Casa, Tanger, Agadir</div>
+
+  <div class="kpis" id="kpis">
+    <div class="kpi total"><div class="label">Total retours</div><div class="value" id="kpi-total">—</div></div>
+    <div class="kpi defective"><div class="label">Defective</div><div class="value" id="kpi-defective">—</div></div>
+    <div class="kpi wrong"><div class="label">Wrong item</div><div class="value" id="kpi-wrong">—</div></div>
+    <div class="kpi changed"><div class="label">Changed mind</div><div class="value" id="kpi-changed">—</div></div>
+  </div>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label for="filter-date">Date</label>
+      <select id="filter-date"><option value="">Toutes</option></select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-city">Ville</label>
+      <select id="filter-city"><option value="">Toutes</option></select>
+    </div>
+    <div class="filter-group">
+      <label for="filter-reason">Raison</label>
+      <select id="filter-reason"><option value="">Toutes</option></select>
+    </div>
+    <button class="reset" id="btn-reset">Réinitialiser</button>
+  </div>
+
+  <table id="report-table">
+    <thead>
+      <tr>
+        <th data-key="id">ID<span class="arrow">↕</span></th>
+        <th data-key="date">Date<span class="arrow">↕</span></th>
+        <th data-key="city">Ville<span class="arrow">↕</span></th>
+        <th data-key="reason">Raison<span class="arrow">↕</span></th>
+        <th data-key="count">Compte<span class="arrow">↕</span></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+  <div class="footer">
+    <div><span class="status-dot"></span>Auto-refresh toutes les 10 secondes</div>
+    <div id="last-update">—</div>
+  </div>
+
+  <div class="error" id="error-box"></div>
+
+<script>
+const CSV_URL = "output/report.csv";
+const REFRESH_MS = 10000;
+
+let ALL_ROWS = [];
+let SORT = { key: "id", dir: "asc" };
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(",");
+  return lines.slice(1).map(line => {
+    const cells = line.split(",");
+    const row = {};
+    headers.forEach((h, i) => row[h] = cells[i] ?? "");
+    row.count = Number(row.count) || 0;
+    row.id = Number(row.id) || 0;
+    return row;
+  });
+}
+
+function uniqueValues(rows, key) {
+  return [...new Set(rows.map(r => r[key]))].sort();
+}
+
+function fillSelect(id, values) {
+  const sel = document.getElementById(id);
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Toutes</option>';
+  values.forEach(v => {
+    const opt = document.createElement("option");
+    opt.value = v;
+    opt.textContent = v;
+    sel.appendChild(opt);
+  });
+  if (values.includes(current)) sel.value = current;
+}
+
+function getFiltered() {
+  const d = document.getElementById("filter-date").value;
+  const c = document.getElementById("filter-city").value;
+  const r = document.getElementById("filter-reason").value;
+  return ALL_ROWS.filter(row =>
+    (!d || row.date === d) &&
+    (!c || row.city === c) &&
+    (!r || row.reason === r)
+  );
+}
+
+function sortRows(rows) {
+  const { key, dir } = SORT;
+  return [...rows].sort((a, b) => {
+    let va = a[key], vb = b[key];
+    if (typeof va === "number" && typeof vb === "number") {
+      return dir === "asc" ? va - vb : vb - va;
+    }
+    return dir === "asc"
+      ? String(va).localeCompare(String(vb))
+      : String(vb).localeCompare(String(va));
+  });
+}
+
+function renderKPIs(rows) {
+  const total = rows.reduce((s, r) => s + r.count, 0);
+  const byReason = { defective: 0, wrong_item: 0, changed_mind: 0 };
+  rows.forEach(r => { if (byReason[r.reason] !== undefined) byReason[r.reason] += r.count; });
+  document.getElementById("kpi-total").textContent = total;
+  document.getElementById("kpi-defective").textContent = byReason.defective;
+  document.getElementById("kpi-wrong").textContent = byReason.wrong_item;
+  document.getElementById("kpi-changed").textContent = byReason.changed_mind;
+}
+
+function renderTable(rows) {
+  const tbody = document.getElementById("tbody");
+  const sorted = sortRows(rows);
+  tbody.innerHTML = sorted.map(r => `
+    <tr>
+      <td>${r.id}</td>
+      <td>${r.date}</td>
+      <td>${r.city}</td>
+      <td><span class="badge ${r.reason}">${r.reason}</span></td>
+      <td class="count-cell">${r.count}</td>
+    </tr>
+  `).join("");
+}
+
+function updateArrows() {
+  document.querySelectorAll("th").forEach(th => {
+    th.classList.toggle("sorted", th.dataset.key === SORT.key);
+    const arrow = th.querySelector(".arrow");
+    if (th.dataset.key === SORT.key) {
+      arrow.textContent = SORT.dir === "asc" ? "↑" : "↓";
+    } else {
+      arrow.textContent = "↕";
+    }
+  });
+}
+
+function applyAndRender() {
+  const filtered = getFiltered();
+  renderKPIs(filtered);
+  renderTable(filtered);
+  updateArrows();
+}
+
+async function loadData() {
+  try {
+    const res = await fetch(CSV_URL + "?t=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+
+    const isFirst = ALL_ROWS.length === 0;
+    ALL_ROWS = parseCSV(text);
+
+    if (isFirst) {
+      fillSelect("filter-date", uniqueValues(ALL_ROWS, "date"));
+      fillSelect("filter-city", uniqueValues(ALL_ROWS, "city"));
+      fillSelect("filter-reason", uniqueValues(ALL_ROWS, "reason"));
+    }
+
+    document.getElementById("error-box").style.display = "none";
+    document.getElementById("last-update").textContent =
+      "Dernière mise à jour : " + new Date().toLocaleTimeString("fr-FR");
+
+    applyAndRender();
+  } catch (e) {
+    const box = document.getElementById("error-box");
+    box.textContent = "⚠️ Impossible de charger " + CSV_URL + " (" + e.message + ")";
+    box.style.display = "block";
+  }
+}
+
+// Events
+document.getElementById("filter-date").addEventListener("change", applyAndRender);
+document.getElementById("filter-city").addEventListener("change", applyAndRender);
+document.getElementById("filter-reason").addEventListener("change", applyAndRender);
+document.getElementById("btn-reset").addEventListener("click", () => {
+  document.getElementById("filter-date").value = "";
+  document.getElementById("filter-city").value = "";
+  document.getElementById("filter-reason").value = "";
+  applyAndRender();
+});
+document.querySelectorAll("th").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.key;
+    if (SORT.key === key) {
+      SORT.dir = SORT.dir === "asc" ? "desc" : "asc";
+    } else {
+      SORT.key = key;
+      SORT.dir = "asc";
+    }
+    applyAndRender();
+  });
+});
+
+loadData();
+setInterval(loadData, REFRESH_MS);
+</script>
+</body>
+</html>
