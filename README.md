@@ -72,5 +72,5 @@ Le dashboard viewer/index.html offre :
 
 👤 Auteur:
 Fatima-Ezzahra BOUMAIZE
-🎓 Data Maroc Bootcamp — Promotion 2026
+🎓 Data Maroc Bootcamp — Promotion octobre-2026
 📧 fatimaezzahraboumaize020@gmail.com
